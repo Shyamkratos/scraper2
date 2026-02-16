@@ -1,0 +1,165 @@
+{
+  "version": "2.0",
+  "last_updated": "2026-02-16",
+  "sources": [
+    {
+      "name": "Infosec-Conferences.com",
+      "url": "https://infosec-conferences.com/",
+      "type": "html_directory",
+      "enabled": true,
+      "priority": 1,
+      "notes": "Primary aggregator - 3400+ events, manually curated"
+    },
+    {
+      "name": "sec-deadlines",
+      "url": "https://sec-deadlines.github.io/",
+      "type": "yaml",
+      "enabled": true,
+      "priority": 1,
+      "notes": "Academic conferences with CFP deadlines - highly reliable"
+    },
+    {
+      "name": "Cryptax/confsec",
+      "url": "https://github.com/cryptax/confsec",
+      "type": "markdown",
+      "enabled": true,
+      "priority": 1,
+      "notes": "Community-maintained, Europe strong, active updates"
+    },
+    {
+      "name": "WikiCFP",
+      "url": "http://www.wikicfp.com/cfp/",
+      "type": "html_search",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Academic CFP database - search based"
+    },
+    {
+      "name": "Dev.Events Security",
+      "url": "https://dev.events/security",
+      "type": "html_directory",
+      "enabled": true,
+      "priority": 1,
+      "notes": "118+ cybersecurity conferences, developer focused"
+    },
+    {
+      "name": "RSA Conference",
+      "url": "https://www.rsaconference.com/",
+      "type": "html_direct",
+      "enabled": true,
+      "priority": 1,
+      "notes": "Official RSA Conference site"
+    },
+    {
+      "name": "Cybersecurity Dive",
+      "url": "https://www.cybersecuritydive.com/",
+      "type": "html_article",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Industry news site with conference listings"
+    },
+    {
+      "name": "Journeybee",
+      "url": "https://www.journeybee.io/resources/top-30-global-cybersecurity-events",
+      "type": "html_curated",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Top 30 curated cybersecurity events with dates"
+    },
+    {
+      "name": "SecurityWeek Events",
+      "url": "https://www.securitysummits.com/",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Virtual cybersecurity summits"
+    },
+    {
+      "name": "FIRST Events",
+      "url": "https://www.first.org/events/",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Incident response community events"
+    },
+    {
+      "name": "SANS Events",
+      "url": "https://www.sans.org/cyber-security-training-events/",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Training events worldwide"
+    },
+    {
+      "name": "ENISA Events",
+      "url": "https://www.enisa.europa.eu/events",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 2,
+      "notes": "EU cybersecurity agency - Europe focus"
+    },
+    {
+      "name": "ISC2 Events",
+      "url": "https://www.isc2.org/events",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 3,
+      "notes": "Professional certification events"
+    },
+    {
+      "name": "OpenSSF Events",
+      "url": "https://openssf.org/events/",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 3,
+      "notes": "Open source security foundation events"
+    },
+    {
+      "name": "ISACA Events",
+      "url": "https://www.isaca.org/training-and-events/conferences",
+      "type": "html_calendar",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Global conferences - static HTML, reliable"
+    },
+    {
+      "name": "Red Canary CFP",
+      "url": "https://redcanary.com/blog/tag/cfp/",
+      "type": "html_blog",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Monthly CFP tracker - curated community gold standard"
+    },
+    {
+      "name": "Privacy Deadlines",
+      "url": "https://privacydeadlines.github.io/",
+      "type": "yaml",
+      "enabled": true,
+      "priority": 3,
+      "notes": "Privacy-focused academic conferences (main branch)"
+    },
+    {
+      "name": "BSides Official",
+      "url": "https://bsides.org/",
+      "type": "html_community",
+      "enabled": true,
+      "priority": 2,
+      "notes": "Community-driven security conferences globally"
+    }
+  ],
+  "scrape_config": {
+    "frequency": "daily",
+    "time": "09:00",
+    "timezone": "UTC",
+    "retry_on_failure": true,
+    "max_retries": 3,
+    "rate_limit_seconds": 2
+  },
+  "filters": {
+    "min_year": 2025,
+    "max_year": 2027,
+    "exclude_keywords": ["webinar only", "training course", "workshop only", "lunch and learn", "breakfast briefing"],
+    "priority_regions": ["Asia", "Europe"],
+    "require_date": false
+  }
+}

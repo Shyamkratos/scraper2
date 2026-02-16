@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cybersec Conferences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #3fb950;
+      --accent-dim: #238636;
+      --link: #58a6ff;
+      --cfp: #d29922;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 0;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 1.5rem;
+      margin: 0 0 0.25rem 0;
+      color: var(--accent);
+    }
+    .subtitle { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .filters label { color: var(--text-muted); font-size: 0.85rem; }
+    select, input[type="search"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    input[type="search"] { min-width: 180px; }
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .summary span { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+    .summary .region { color: var(--text-muted); }
+    .summary .count { color: var(--accent); margin-left: 0.25rem; }
+    .list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      transition: border-color 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent-dim); }
+    .card h3 { margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 600; }
+    .card h3 a { color: var(--text); text-decoration: none; }
+    .card h3 a:hover { color: var(--link); }
+    .meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem; }
+    .meta span { margin-right: 1rem; }
+    .cfp { color: var(--cfp); }
+    .description { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .empty { text-align: center; color: var(--text-muted); padding: 3rem 1rem; }
+    .loading { text-align: center; color: var(--text-muted); padding: 2rem; }
+    .error { color: #f85149; padding: 1rem; }
+    .section-heading {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin: 1.25rem 0 0.5rem 0;
+      padding-bottom: 0.25rem;
+    }
+    .section-heading:first-of-type { margin-top: 0; }
+    .card.past { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Cybersec Conferences</h1>
+      <p class="subtitle">2025–2027 · Filter by region and search</p>
+    </header>
+
+    <div class="filters">
+      <label for="region">Region</label>
+      <select id="region">
+        <option value="">All regions</option>
+        <option value="Asia">Asia</option>
+        <option value="Europe">Europe</option>
+        <option value="Americas">Americas</option>
+        <option value="Virtual">Virtual</option>
+        <option value="Other">Other</option>
+      </select>
+      <label for="year">Year</label>
+      <select id="year">
+        <option value="">All years</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+      </select>
+      <label for="search">Search</label>
+      <input type="search" id="search" placeholder="Name, location…" />
+    </div>
+
+    <div class="summary" id="summary"></div>
+    <div class="list" id="list">
+      <div class="loading" id="loading">Loading…</div>
+    </div>
+  </div>
+
+  <script>
+    const regionEl = document.getElementById('region');
+    const yearEl = document.getElementById('year');
+    const searchEl = document.getElementById('search');
+    const summaryEl = document.getElementById('summary');
+    const listEl = document.getElementById('list');
+    const loadingEl = document.getElementById('loading');
+
+    let debounceTimer;
+    function fetchConferences() {
+      const params = new URLSearchParams();
+      const region = regionEl.value;
+      const year = yearEl.value;
+      const q = searchEl.value.trim();
+      if (region) params.set('region', region);
+      if (year) params.set('year', year);
+      if (q) params.set('q', q);
+
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = 'Loading…';
+      listEl.querySelectorAll('.card').forEach(c => c.remove());
+
+      fetch('/api/conferences?' + params.toString())
+        .then(r => r.json())
+        .then(data => {
+          loadingEl.style.display = 'none';
+          renderSummary(data.summary, data.conferences.length);
+          if (data.conferences.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.textContent = 'No conferences match the filters. Run the scraper first: python3 scraper.py';
+            listEl.appendChild(empty);
+          } else {
+            let lastSection = null;
+            data.conferences.forEach(c => {
+              const section = c.is_upcoming ? 'upcoming' : 'past';
+              if (section !== lastSection) {
+                lastSection = section;
+                const heading = document.createElement('div');
+                heading.className = 'section-heading';
+                heading.textContent = c.is_upcoming ? '🟢 Upcoming' : '🔴 Past';
+                listEl.appendChild(heading);
+              }
+              listEl.appendChild(renderCard(c));
+            });
+          }
+        })
+        .catch(err => {
+          loadingEl.style.display = 'none';
+          const errEl = document.createElement('div');
+          errEl.className = 'error';
+          errEl.textContent = 'Failed to load: ' + err.message;
+          listEl.appendChild(errEl);
+        });
+    }
+
+    function renderSummary(summary, total) {
+      if (!summary || Object.keys(summary).length === 0) {
+        summaryEl.innerHTML = total ? `<span>Total: <strong class="count">${total}</strong> conferences</span>` : '';
+        return;
+      }
+      summaryEl.innerHTML =
+        '<span>Total: <strong class="count">' + total + '</strong></span>' +
+        Object.entries(summary).map(([region, count]) =>
+          `<span class="region">${region}: <strong class="count">${count}</strong></span>`
+        ).join('');
+    }
+
+    function renderCard(c) {
+      const div = document.createElement('div');
+      div.className = 'card' + (c.is_upcoming === false ? ' past' : '');
+      const title = c.website
+        ? `<a href="${escapeHtml(c.website)}" target="_blank" rel="noopener">${escapeHtml(c.name)}</a>`
+        : escapeHtml(c.name);
+      let meta = '';
+      if (c.location || c.region) meta += `<span>📍 ${escapeHtml(c.location || c.region || '—')}</span>`;
+      if (c.start_date) meta += `<span>📅 ${c.start_date}</span>`;
+      if (c.cfp_deadline) meta += `<span class="cfp">✏️ CFP: ${c.cfp_deadline}</span>`;
+      const desc = c.description ? `<p class="description">${escapeHtml(c.description)}</p>` : '';
+      div.innerHTML = `<h3>${title}</h3><div class="meta">${meta}</div>${desc}`;
+      return div;
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      const p = document.createElement('p');
+      p.textContent = s;
+      return p.innerHTML;
+    }
+
+    regionEl.addEventListener('change', fetchConferences);
+    yearEl.addEventListener('change', fetchConferences);
+    searchEl.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(fetchConferences, 250);
+    });
+
+    fetchConferences();
+  </script>
+</body>
+</html>
