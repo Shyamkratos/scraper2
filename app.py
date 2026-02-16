@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
-DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "conferences.db")
+DATABASE = os.environ.get("CONFERENCES_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "conferences.db"))
 
 
 def get_db():

@@ -37,6 +37,19 @@ python3 app.py
 
 Then open **http://127.0.0.1:5000** in your browser. Filter by region (Asia, Europe, Americas, etc.), year (2025–2027), and search by name or location.
 
+### Deploy on Render
+
+The app needs **conferences.db** to be created by running the scraper. On Render, the **Start Command** must run the scraper first, then start the web server:
+
+```bash
+python3 scraper.py && gunicorn app:app --bind 0.0.0.0:$PORT
+```
+
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** (above) — or use the repo’s **Procfile** (Render uses it if present).
+
+The first deploy may take a few minutes while the scraper runs (many sources, rate limiting). After that, the UI will show data. The database lives in the service’s filesystem; it is repopulated on each deploy or service restart.
+
 ### Schedule daily (Linux/macOS)
 
 ```bash
