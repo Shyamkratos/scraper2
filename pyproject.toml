@@ -1,0 +1,9 @@
+[project]
+name = "cybersec-conferences"
+version = "0.1.0"
+description = "Cybersecurity conference scraper + web UI"
+requires-python = ">=3.10"
+
+[tool.vercel.scripts]
+# Runs after dependencies are installed. Creates conferences.db so the UI has data.
+build = "python build.py"
