@@ -3,7 +3,16 @@ name = "cybersec-conferences"
 version = "0.1.0"
 description = "Cybersecurity conference scraper + web UI"
 requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.2",
+    "python-dateutil>=2.8.2",
+    "pyyaml>=6.0.1",
+    "lxml>=4.9.3",
+    "flask>=3.0.0",
+    "gunicorn>=21.2.0",
+]
 
 [tool.vercel.scripts]
-# Runs after dependencies are installed. Creates conferences.db so the UI has data.
-build = "python build.py"
+# uv run installs deps from pyproject.toml and runs build.py with them
+build = "uv run python build.py"
