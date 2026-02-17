@@ -120,5 +120,24 @@ def api_summary():
     return jsonify({"regions": regions, "total": total})
 
 
+@app.route("/api/health")
+def api_health():
+    """Debug: see if DB exists and how many rows (for Render troubleshooting)."""
+    db_exists = os.path.exists(DATABASE)
+    count = None
+    if db_exists:
+        try:
+            conn = sqlite3.connect(DATABASE)
+            count = conn.execute("SELECT COUNT(*) FROM conferences").fetchone()[0]
+            conn.close()
+        except Exception as e:
+            count = str(e)
+    return jsonify({
+        "db_exists": db_exists,
+        "db_path": DATABASE,
+        "conferences_count": count,
+    })
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
