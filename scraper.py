@@ -117,6 +117,21 @@ FLAG_EMOJI = {
     '🇦🇺': ('Australia', 'Other'),   '🇳🇿': ('New Zealand', 'Other'),
 }
 
+# Slack/Discord-style emoji shortcodes in location → country name (fix ":us:" etc.)
+EMOJI_SHORTCODES = {
+    ':us:': 'USA', ':usa:': 'USA', ':united_states:': 'USA',
+    ':uk:': 'UK', ':gb:': 'UK', ':de:': 'Germany', ':fr:': 'France',
+    ':es:': 'Spain', ':it:': 'Italy', ':nl:': 'Netherlands', ':in:': 'India',
+    ':jp:': 'Japan', ':sg:': 'Singapore', ':au:': 'Australia', ':ca:': 'Canada',
+    ':br:': 'Brazil', ':mx:': 'Mexico', ':pl:': 'Poland', ':ch:': 'Switzerland',
+    ':at:': 'Austria', ':be:': 'Belgium', ':ie:': 'Ireland', ':pt:': 'Portugal',
+    ':se:': 'Sweden', ':no:': 'Norway', ':dk:': 'Denmark', ':fi:': 'Finland',
+    ':cz:': 'Czech Republic', ':gr:': 'Greece', ':ro:': 'Romania', ':hu:': 'Hungary',
+    ':ua:': 'Ukraine', ':il:': 'Israel', ':kr:': 'South Korea', ':tw:': 'Taiwan',
+    ':hk:': 'Hong Kong', ':th:': 'Thailand', ':my:': 'Malaysia', ':ph:': 'Philippines',
+    ':ae:': 'UAE', ':za:': 'South Africa', ':nz:': 'New Zealand',
+}
+
 # FIX v5: ISO codes MUST be standalone (not US state abbrevs like "IL", "CA", "MD")
 # We list only 2-letter country codes that should trigger region lookup.
 # We deliberately EXCLUDE US state codes (IL, CA, FL, MD, VA, OH, NC, PA, WI, NE, IA)
@@ -356,10 +371,40 @@ def is_practitioner(name: str, desc: str = "", source: str = "") -> bool:
 
 
 def clean_name(raw: str) -> str:
-    m = re.match(r'^\d{1,2}(st|nd|rd|th)\s+\w+\s+\d{4}\s*\|\s*(.*)', raw, re.I)
+    if not raw:
+        return ''
+    s = raw.strip()
+    # Strip date prefix: "17th Feb 2026 | Conference Name" → "Conference Name"
+    m = re.match(r'^\d{1,2}(st|nd|rd|th)\s+\w+\s+\d{4}\s*\|\s*(.*)', s, re.I)
     if m:
-        return m.group(2).strip()
-    return raw.strip()
+        s = m.group(2).strip()
+    # Markdown link: [text](url) or \text(url) → keep display text only
+    link_m = re.search(r'\[([^\]]+)\]\([^)]+\)', s)
+    if link_m:
+        s = link_m.group(1).strip()
+    backslash_m = re.search(r'\\?(.+?)\((https?://[^)]+)\)', s)
+    if backslash_m:
+        s = backslash_m.group(1).replace('\\', '').strip()
+    # Remove leftover markdown/backslashes
+    s = re.sub(r'[\*`\[\]\\]', '', s).strip()
+    # Normalize repeated slashes: RE//verse → REverse
+    s = re.sub(r'/+', '/', s).strip('/')
+    if ' / ' in s:
+        s = s.replace(' / ', ' ').strip()
+    return s if s else raw.strip()
+
+
+def clean_location(raw: str) -> str:
+    """Replace :us:, :uk: etc. with country name; strip any remaining :word:."""
+    if not raw:
+        return ''
+    s = raw.strip()
+    for shortcode, country in EMOJI_SHORTCODES.items():
+        s = s.replace(shortcode, country)
+    # Remove any remaining :word: tokens (unknown shortcodes)
+    s = re.sub(r':[a-z_]+:', '', s, flags=re.I).strip()
+    s = re.sub(r'\s+,', ',', s).strip()  # "City , USA" → "City, USA"
+    return s
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -395,8 +440,7 @@ def init_db():
 
 
 def _save(conf: Dict, source: str) -> bool:
-    name = (conf.get('name') or '').strip()
-    # Normalise unicode spaces / zero-width chars
+    name = clean_name(conf.get('name') or '')
     name = re.sub(r'[\u200b\u00a0\ufeff]', '', name).strip()
     if not name or len(name) < 3:
         return False
@@ -417,18 +461,21 @@ def _save(conf: Dict, source: str) -> bool:
         c.execute("SELECT id FROM conferences WHERE name=? AND start_date=?", (name, sd))
         row = c.fetchone()
         if row:
+            loc = clean_location(conf.get('location') or '')
             c.execute("""UPDATE conferences SET last_seen=?,
                 website=COALESCE(?,website), cfp_deadline=COALESCE(?,cfp_deadline),
                 cfp_url=COALESCE(?,cfp_url), location=COALESCE(?,location),
                 region=COALESCE(?,region) WHERE id=?""",
                 (now, conf.get('website'), conf.get('cfp_deadline'), conf.get('cfp_url'),
-                 conf.get('location'), conf.get('region'), row[0]))
+                 loc or None, conf.get('region'), row[0]))
         else:
+            loc = clean_location(conf.get('location') or '')
+            country = clean_location(conf.get('country') or '') or (loc.split(',')[-1].strip() if loc and ',' in loc else None)
             c.execute("""INSERT INTO conferences
                 (name,location,country,region,start_date,end_date,cfp_deadline,cfp_url,
                  website,description,source,discovered_at,last_seen)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (name, conf.get('location'), conf.get('country'), conf.get('region'),
+                (name, loc or None, country or None, conf.get('region'),
                  sd, conf.get('end_date'), conf.get('cfp_deadline'),
                  conf.get('cfp_url'), conf.get('website'), conf.get('description'),
                  source, now, now))

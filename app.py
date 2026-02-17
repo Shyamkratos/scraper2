@@ -4,6 +4,7 @@ Simple web UI for Cybersecurity Conference Scraper.
 Reads from conferences.db and serves a filterable list.
 """
 
+import re
 import sqlite3
 import os
 from datetime import datetime
@@ -11,6 +12,35 @@ from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 DATABASE = os.environ.get("CONFERENCES_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "conferences.db"))
+
+# Display sanitization: fix raw markdown and :us: shortcodes in existing DB rows
+EMOJI_SHORTCODES = {
+    ":us:": "USA", ":usa:": "USA", ":uk:": "UK", ":gb:": "UK", ":de:": "Germany",
+    ":fr:": "France", ":in:": "India", ":jp:": "Japan", ":ca:": "Canada", ":au:": "Australia",
+}
+
+def sanitize_name(s):
+    if not s:
+        return s
+    s = str(s).strip()
+    m = re.search(r"\[([^\]]+)\]\([^)]+\)", s)
+    if m:
+        s = m.group(1)
+    m = re.search(r"\\?(.+?)\((https?://[^)]+)\)", s)
+    if m:
+        s = m.group(1).replace("\\", "").strip()
+    s = re.sub(r"[\*`\[\]\\]", "", s).strip()
+    s = re.sub(r"/+", "/", s).strip("/")
+    return s or str(s)
+
+def sanitize_location(s):
+    if not s:
+        return s
+    s = str(s).strip()
+    for code, country in EMOJI_SHORTCODES.items():
+        s = s.replace(code, country)
+    s = re.sub(r":[a-z_]+:", "", s, flags=re.I).strip()
+    return re.sub(r"\s+,", ",", s).strip()
 
 
 def get_db():
@@ -75,6 +105,9 @@ def api_conferences():
         start = d.get("start_date")
         d["year"] = int(start[:4]) if start and len(start) >= 4 else None
         d["is_upcoming"] = (start or "") >= today if start else True
+        d["name"] = sanitize_name(d.get("name"))
+        d["location"] = sanitize_location(d.get("location"))
+        d["country"] = sanitize_location(d.get("country"))
         conferences.append(d)
 
     # Summary counts by region (same filters)
