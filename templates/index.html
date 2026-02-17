@@ -201,35 +201,75 @@
 
     function renderSummary(summary, total) {
       if (!summary || Object.keys(summary).length === 0) {
-        summaryEl.innerHTML = total ? `<span>Total: <strong class="count">${total}</strong> conferences</span>` : '';
+        summaryEl.innerHTML = total ? '<span>Total: <strong class="count">' + escapeHtml(String(total)) + '</strong> conferences</span>' : '';
         return;
       }
       summaryEl.innerHTML =
-        '<span>Total: <strong class="count">' + total + '</strong></span>' +
+        '<span>Total: <strong class="count">' + escapeHtml(String(total)) + '</strong></span>' +
         Object.entries(summary).map(([region, count]) =>
-          `<span class="region">${region}: <strong class="count">${count}</strong></span>`
+          '<span class="region">' + escapeHtml(region) + ': <strong class="count">' + escapeHtml(String(count)) + '</strong></span>'
         ).join('');
+    }
+
+    /** Only allow http/https. Prevents javascript: and data: XSS. */
+    function safeUrl(s) {
+      if (!s || typeof s !== 'string') return '';
+      const t = s.trim().toLowerCase();
+      if (t.startsWith('https://') || t.startsWith('http://')) return s.trim();
+      return '';
     }
 
     function renderCard(c) {
       const div = document.createElement('div');
       div.className = 'card' + (c.is_upcoming === false ? ' past' : '');
-      const title = c.website
-        ? `<a href="${escapeHtml(c.website)}" target="_blank" rel="noopener">${escapeHtml(c.name)}</a>`
-        : escapeHtml(c.name);
-      let meta = '';
-      if (c.location || c.region) meta += `<span>📍 ${escapeHtml(c.location || c.region || '—')}</span>`;
-      if (c.start_date) meta += `<span>📅 ${c.start_date}</span>`;
-      if (c.cfp_deadline) meta += `<span class="cfp">✏️ CFP: ${c.cfp_deadline}</span>`;
-      const desc = c.description ? `<p class="description">${escapeHtml(c.description)}</p>` : '';
-      div.innerHTML = `<h3>${title}</h3><div class="meta">${meta}</div>${desc}`;
+      const h3 = document.createElement('h3');
+      const website = safeUrl(c.website);
+      if (website) {
+        const a = document.createElement('a');
+        a.href = website;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = (c.name != null && c.name !== '') ? String(c.name) : website;
+        h3.appendChild(a);
+      } else {
+        h3.textContent = (c.name != null && c.name !== '') ? String(c.name) : '—';
+      }
+      div.appendChild(h3);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const locStr = (c.location || c.region || '—');
+      if (locStr !== '—') {
+        const locSpan = document.createElement('span');
+        locSpan.textContent = '📍 ' + locStr;
+        meta.appendChild(locSpan);
+      }
+      if (c.start_date) {
+        const dateSpan = document.createElement('span');
+        dateSpan.textContent = '📅 ' + c.start_date;
+        meta.appendChild(dateSpan);
+      }
+      if (c.cfp_deadline) {
+        const cfpSpan = document.createElement('span');
+        cfpSpan.className = 'cfp';
+        cfpSpan.textContent = '✏️ CFP: ' + c.cfp_deadline;
+        meta.appendChild(cfpSpan);
+      }
+      div.appendChild(meta);
+
+      if (c.description) {
+        const desc = document.createElement('p');
+        desc.className = 'description';
+        desc.textContent = c.description;
+        div.appendChild(desc);
+      }
       return div;
     }
 
     function escapeHtml(s) {
-      if (!s) return '';
+      if (s == null) return '';
       const p = document.createElement('p');
-      p.textContent = s;
+      p.textContent = String(s);
       return p.innerHTML;
     }
 
