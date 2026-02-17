@@ -10,10 +10,9 @@ import sys
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def main():
-    from scraper import init_database, scrape_all
+    from scraper import main as run_scraper
     print("Running scraper for Vercel build...", flush=True)
-    init_database()
-    scrape_all()
+    run_scraper()
     db_path = os.environ.get("CONFERENCES_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "conferences.db"))
     if os.path.exists(db_path):
         size = os.path.getsize(db_path)
